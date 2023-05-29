@@ -1,5 +1,7 @@
+use [GD1C2023]
 go
 
+go
 create schema BILARDISTAS;
 go
 
@@ -63,6 +65,7 @@ create table BILARDISTAS.Tipo_Cupon(
 create table BILARDISTAS.Reclamo(
 	RECLAMO_NUMERO decimal(18,0) not null,
 	RECLAMO_USUARIO int not null,
+	RECLAMO_OPERADOR int not null,
 	RECLAMO_PEDIDO decimal(18,0) not null,
 	RECLAMO_TIPO nvarchar(50) not null,
 	RECLAMO_ESTADO nvarchar(50) not null,
@@ -75,11 +78,12 @@ create table BILARDISTAS.Reclamo(
 
 create table BILARDISTAS.Cupon_Reclamo(
 	CUPON_RECLAMO_CUPON decimal(18,0) not null,
-	CUPON_RECLAMO_CODIGO_RECLAMO decimal(18,0) not null,
-	CUPON_RECLAMO_NRO decimal(18,0) not null,
-	CUPON_RECLAMO_FECHA_ALTA datetime2(3),
-	CUPON_RECLAMO_FECHA_VENCIMIENTO datetime2(3),
-	CUPON_RECLAMO_TIPO nvarchar(50)
+    CUPON_RECLAMO_CODIGO_RECLAMO decimal(18,0) not null,
+    CUPON_RECLAMO_NRO decimal(18,0) not null,
+    CUPON_RECLAMO_MONTO decimal(18,2),
+    CUPON_RECLAMO_FECHA_ALTA datetime2(3),
+    CUPON_RECLAMO_FECHA_VENCIMIENTO datetime2(3),
+    CUPON_RECLAMO_TIPO nvarchar(50) not null
 	);
 
 create table BILARDISTAS.Cupon(
@@ -274,7 +278,18 @@ create table BILARDISTAS.Pedido_Cupon(
 	PEDIDO_CUPON_NRO_PEDIDO decimal(18,0) not null
 	);
 
------------------------- CREACION DE PKS --------------------
+	print ' Estructura de tablas creadas con exito ';
+end
+go
+
+
+---------------------------------------------------------------------------------------------------------
+--------------------------------------- CREACION DE PRIMARY KEYS ----------------------------------------
+---------------------------------------------------------------------------------------------------------
+
+create procedure BILARDISTAS.Creacion_PKs
+as
+begin
 
 alter table BILARDISTAS.Paquete_Tipo
 add primary key (PAQUETE_TIPO)
@@ -357,12 +372,8 @@ add primary key (PRODUCTO_CODIGO)
 alter table BILARDISTAS.Dia
 add primary key (DIA_HORARIO_LOCAL)
 
---alter table BILARDISTAS.Horario_Local
---add primary key (HORARIO_LOCAL_CODIGO_DIA, HORARIO_LOCAL_CODIGO_LOCAL)
-
 alter table BILARDISTAS.Horario_Local
 add primary key (HORARIO_LOCAL_CODIGO)
-
 
 alter table BILARDISTAS.Estado_Pedido 
 add primary key (ESTADO_PEDIDO)
@@ -373,25 +384,34 @@ add primary key (PEDIDO_NRO)
 alter table BILARDISTAS.Pedido_Cupon
 add primary key (PEDIDO_CUPON_NRO_CUPON, PEDIDO_CUPON_NRO_PEDIDO)
 
-alter table BILARDISTAS.Producto_Por_Pedido ----Doble
+alter table BILARDISTAS.Producto_Por_Pedido 
 add primary key (PRODUCTO_PEDIDO_NRO, PRODUCTO_PEDIDO_LOCAL_CODIGO)
 
-alter table BILARDISTAS.Repartidor_Localidad ---------DOBLE
+alter table BILARDISTAS.Repartidor_Localidad 
 add primary key (REPARTIDOR,LOCALIDAD)
 
 alter table BILARDISTAS.Producto_Local
 add primary key (PRODUCTO_LOCAL_CODIGO_LOCAL, PRODUCTO_LOCAL_CODIGO_PRODUCTO)
 
+	print ' Primary Keys creadas con exito ';
+end
+go
 
-----------------------------------
 
+create procedure BILARDISTAS.Creacion_Fks
+as
+begin
 
--------------------- CREACION DE FKS --------------------------------------------------------
+---------------------------------------------------------------------------------------------------------
+--------------------------------------- CREACION DE FOREING KEYS ----------------------------------------
+---------------------------------------------------------------------------------------------------------
 
 alter table BILARDISTAS.Reclamo
 	add constraint FK_Reclamo_Usuario foreign key (RECLAMO_USUARIO) references BILARDISTAS.Usuario (USUARIO_CODIGO)
+
 alter table BILARDISTAS.Reclamo
 	add constraint FK_Reclamo_Pedido foreign key (RECLAMO_PEDIDO) references BILARDISTAS.Pedido (PEDIDO_NRO)
+
 alter table BILARDISTAS.Reclamo
 	add constraint FK_Reclamo_Tipo foreign key (RECLAMO_TIPO) references BILARDISTAS.Tipo_Reclamo (TIPO_RECLAMO)
 
@@ -400,13 +420,18 @@ alter table BILARDISTAS.Reclamo
 
 alter table BILARDISTAS.Cupon_Reclamo
 	add constraint FK_Cupon_Reclamo_Cupon foreign key (CUPON_RECLAMO_CUPON) references BILARDISTAS.Cupon (CUPON_NRO)
-alter table BILARDISTAS.Cupon_Reclamo
+
+alter table BILARDISTAS.Cupon_Reclamo 
 	add constraint FK_Cupon_Reclamo_Codigo_Reclamo foreign key (CUPON_RECLAMO_CODIGO_RECLAMO) references BILARDISTAS.Reclamo (RECLAMO_NUMERO)
 
 alter table BILARDISTAS.Cupon
 	add constraint FK_Cupon_Usuario foreign key (CUPON_CODIGO_USUARIO) references BILARDISTAS.Usuario (USUARIO_CODIGO)
+
 alter table BILARDISTAS.Cupon
 	add constraint FK_Cupon_Tipo foreign key (CUPON_TIPO) references BILARDISTAS.Tipo_Cupon (TIPO_CUPON)
+
+alter table BILARDISTAS.Reclamo
+	add constraint FK_Operador foreign key (RECLAMO_OPERADOR) references BILARDISTAS.Operador (OPERADOR_CODIGO)
 
 alter table BILARDISTAS.Localidad
 	add constraint FK_Localidad_Provincia foreign key (LOCALIDAD_PROVINCIA) references BILARDISTAS.Provincia (PROVINCIA)
@@ -416,8 +441,6 @@ alter table BILARDISTAS.Direccion_Usuario
 
 alter table BILARDISTAS.Direccion_Usuario
 	add constraint FK_Direccion_Usuario_Localidad foreign key (DIRECCION_USUARIO_LOCALIDAD) references BILARDISTAS.Localidad (LOCALIDAD)
-
---------------------------------------------------------------------------------------------------------------------------------------------
 
 alter table BILARDISTAS.Pedido_Cupon
 	add constraint FK_Pedido_Cupon_Numero_Cupon foreign key (PEDIDO_CUPON_NRO_CUPON) references BILARDISTAS.Cupon (CUPON_NRO)
@@ -442,7 +465,6 @@ alter table BILARDISTAS.Envio_Mensajeria
 
 alter table BILARDISTAS.Envio_Mensajeria
 	add constraint FK_Envio_Mensajeria_Localidad foreign key (ENVIO_MENSAJERIA_LOCALIDAD) references BILARDISTAS.Localidad (LOCALIDAD)
-
 
 alter table BILARDISTAS.Repartidor
 	add constraint FK_Repartidor_Tipo_Movilidad foreign key (REPARTIDOR_TIPO_MOVILIDAD) references BILARDISTAS.Tipo_Movilidad (TIPO_MOVILIDAD_REPARTIDOR)
@@ -476,9 +498,6 @@ alter table BILARDISTAS.Local_Tienda
 
 alter table BILARDISTAS.Local_Tienda
 	add constraint FK_Local_Localidad foreign key (LOCAL_LOCALIDAD) references BILARDISTAS.Localidad (LOCALIDAD)
-
--------------------------------------------------------------------------------------
-
 
 alter table BILARDISTAS.Categoria_Local 
 	add constraint FK_Categoria_Local_Tipo_Local foreign key (CATEGORIA_LOCAL_TIPO) references BILARDISTAS.Tipo_Local (TIPO_LOCAL)
@@ -516,119 +535,282 @@ alter table BILARDISTAS.Envio_Pedido
 alter table BILARDISTAS.Envio_Pedido 
 	add constraint FK_Envio_Direccion foreign key (ENVIO_DIRECCION) references BILARDISTAS.Direccion_Usuario (DIRECCION_USUARIO_CODIGO_USUARIO)
 
-
-
-
+	print ' Foreing Keys creadas con exito ';
 end
 go
 
-create procedure BILARDISTAS.Iniciar_Migracion 
+create procedure BILARDISTAS.Crear_Vista_Repartidores_Localidad 
+as
+begin
+exec ('CREATE VIEW BILARDISTAS.Vista_Repartidores_Localidad AS
+
+(select R.REPARTIDOR_CODIGO, E.ENVIO_MENSAJERIA_FECHA, E.ENVIO_MENSAJERIA_LOCALIDAD from BILARDISTAS.Repartidor R
+join BILARDISTAS.Envio_Mensajeria E on (E.ENVIO_MENSAJERIA_REPARTIDOR = R.REPARTIDOR_CODIGO)
+where E.ENVIO_MENSAJERIA_NRO = (select top 1 M.ENVIO_MENSAJERIA_NRO from BILARDISTAS.Envio_Mensajeria M
+where R.REPARTIDOR_CODIGO = M.ENVIO_MENSAJERIA_REPARTIDOR
+group by M.ENVIO_MENSAJERIA_NRO, M.ENVIO_MENSAJERIA_FECHA
+order by M.ENVIO_MENSAJERIA_FECHA DESC)
+group by R.REPARTIDOR_CODIGO, E.ENVIO_MENSAJERIA_FECHA, E.ENVIO_MENSAJERIA_LOCALIDAD
+-- LOCALIDAD PEDIDO
+union (
+select R.REPARTIDOR_CODIGO, P.PEDIDO_FECHA, L.LOCAL_LOCALIDAD from BILARDISTAS.Repartidor R
+join BILARDISTAS.Envio_Pedido EP on (EP.ENVIO_REPARTIDOR = R.REPARTIDOR_CODIGO)
+join BILARDISTAS.Pedido P on (P.PEDIDO_ENVIO = EP.ENVIO_PEDIDO_CODIGO)
+join BILARDISTAS.Local_Tienda L on (L.LOCAL_CODIGO = P.PEDIDO_LOCAL)
+where P.PEDIDO_NRO  = (select top 1 PED.PEDIDO_NRO from BILARDISTAS.Envio_Pedido EP
+join BILARDISTAS.Pedido PED on (EP.ENVIO_PEDIDO_CODIGO = PED.PEDIDO_ENVIO)
+where R.REPARTIDOR_CODIGO = EP.ENVIO_REPARTIDOR
+group by PED.PEDIDO_NRO, PED.PEDIDO_FECHA
+order by PED.PEDIDO_FECHA DESC)
+group by R.REPARTIDOR_CODIGO, P.PEDIDO_FECHA, L.LOCAL_LOCALIDAD
+))')
+end
+go
+
+
+
+create procedure BILARDISTAS.Creacion_Indices
 as
 begin
 
---Select * from gd_esquema.Maestra
+create index idx_Locales on BILARDISTAS.Local_Tienda (LOCAL_NOMBRE)
+create index idx_Envio_Pedido on BILARDISTAS.Envio_Pedido (ENVIO_DIRECCION)
+create index idx_Direcciones_Usuarios on BILARDISTAS.Direccion_Usuario (DIRECCION_USUARIO_CODIGO_USUARIO)
+create index idx_Estado_Pedidos on BILARDISTAS.Estado_Pedido (ESTADO_PEDIDO_DETALLE)
+create index idx_Medios_De_Pago on BILARDISTAS.Medio_De_Pago (MEDIO_PAGO_NRO_TARJETA)
+create index idx_Paquete_Tipos on BILARDISTAS.Paquete_Tipo (PAQUETE_TIPO)
+create index idx_Estado_Envio_Mensajeria on BILARDISTAS.Estado_Envio_Mensajeria (ESTADO_ENVIO_MENSAJERIA_DETALLE)
+create index idx_Provincia on BILARDISTAS.Provincia (PROVINCIA_DETALLE)
+create index idx_Localidad on BILARDISTAS.Localidad (LOCALIDAD_DETALLE)
+create index idx_Tipo_Reclamo on BILARDISTAS.Tipo_Reclamo (TIPO_RECLAMO_DETALLE)
+create index idx_Estado_Reclamo on BILARDISTAS.Estado_Reclamo (ESTADO_RECLAMO_DETALLE)
 
--- Tipo movilidad
+print ' Indices creados con exito ';
+end
+go
+
+
+
+create procedure BILARDISTAS.Migracion_Tabla_Tipo_Movilidad
+as
+begin
+
 insert into BILARDISTAS.Tipo_Movilidad (TIPO_MOVILIDAD_REPARTIDOR, TIPO_MOVILIDAD_DETALLE)
 (Select left(REPARTIDOR_TIPO_MOVILIDAD,1), REPARTIDOR_TIPO_MOVILIDAD
 From gd_esquema.Maestra
 where REPARTIDOR_TIPO_MOVILIDAD is not null
 group by REPARTIDOR_TIPO_MOVILIDAD)
 
--- Estado envio mensajeria
+
+print ' Tabla Tipo_Movilidad creada con exito ';
+end
+go
+
+
+create procedure BILARDISTAS.Migracion_Tabla_Estado_Envio_Mensajeria
+as
+begin
+
+
 insert into BILARDISTAS.Estado_Envio_Mensajeria
 select ROW_NUMBER() over (order by ENVIO_MENSAJERIA_ESTADO),ENVIO_MENSAJERIA_ESTADO
 from gd_esquema.Maestra
 where ENVIO_MENSAJERIA_ESTADO is not null
 group by ENVIO_MENSAJERIA_ESTADO
 
--- Paquete_tipo
+print ' Tabla Estado_Envio_Mensajeria creada con exito ';
+end
+go
+
+
+create procedure BILARDISTAS.Migracion_Tabla_Paquete_Tipo
+as
+begin
+
+
 insert into BILARDISTAS.Paquete_Tipo
 select PAQUETE_TIPO, PAQUETE_ALTO_MAX, PAQUETE_ANCHO_MAX, PAQUETE_LARGO_MAX, PAQUETE_PESO_MAX, PAQUETE_TIPO_PRECIO
 from gd_esquema.Maestra
 where PAQUETE_TIPO is not null
 group by PAQUETE_TIPO, PAQUETE_ALTO_MAX, PAQUETE_ANCHO_MAX, PAQUETE_LARGO_MAX, PAQUETE_PESO_MAX, PAQUETE_TIPO_PRECIO
 
--- Medio pago tipo
+print ' Tabla Paquete_Tipo creada con exito ';
+end
+go
+
+
+
+create procedure BILARDISTAS.Migracion_Tabla_Medio_Pago_Tipo
+as
+begin
+
 insert into BILARDISTAS.Medio_Pago_Tipo
 select ROW_NUMBER() over (order by MEDIO_PAGO_TIPO),MEDIO_PAGO_TIPO
 from gd_esquema.Maestra
 where MEDIO_PAGO_TIPO is not null
 group by MEDIO_PAGO_TIPO
 
--- Estado repartidor localidad
+print ' Tabla Medio_Pago_Tipo creada con exito ';
+end
+go
+
+
+create procedure BILARDISTAS.Migracion_Tabla_Estado_Repartidor_Localidad
+as
+begin
+
 insert into BILARDISTAS.Estado_Repartidor_Localidad
 values ('A', 'Activa')
 insert into BILARDISTAS.Estado_Repartidor_Localidad
 values ('I','Inactiva')
 
--- Marca Tarjeta
+print ' Tabla creada Estado_Repartidor_Localidad con exito ';
+end
+go
+
+
+
+create procedure BILARDISTAS.Migracion_Tabla_Marca_Tarjeta
+as
+begin
+
 insert into BILARDISTAS.Marca_Tarjeta
 select ROW_NUMBER() over (order by MARCA_TARJETA), MARCA_TARJETA
 from gd_esquema.Maestra
 where MARCA_TARJETA is not null
 group by MARCA_TARJETA
 
+print ' Tabla Marca_Tarjeta creada con exito ';
+end
+go
 
--- Dia
+
+create procedure BILARDISTAS.Migracion_Tabla_Dia
+as
+begin
+
 insert into BILARDISTAS.Dia
 select ROW_NUMBER() over (order by HORARIO_LOCAL_DIA), HORARIO_LOCAL_DIA
 from gd_esquema.Maestra
 where HORARIO_LOCAL_DIA is not null
 group by HORARIO_LOCAL_DIA
 
--- Estado pedido
+print ' Tabla Dia creada con exito ';
+end 
+go
+
+
+create procedure BILARDISTAS.Migracion_Tabla_Estado_Pedido
+as
+begin
+
 insert into BILARDISTAS.Estado_Pedido
 Select ROW_NUMBER() over (order by PEDIDO_ESTADO), PEDIDO_ESTADO
 from gd_esquema.Maestra
 where PEDIDO_ESTADO is not null
 group by PEDIDO_ESTADO
 
--- Tipo Local
+print ' Tabla Estado_Pedido creada con exito ';
+end
+go
+
+
+
+create procedure BILARDISTAS.Migracion_Tabla_Tipo_Local
+as
+begin
+
 insert into BILARDISTAS.TIPO_LOCAL
 select LOCAL_TIPO
 from gd_esquema.Maestra
 where LOCAL_TIPO is not null
 group by LOCAL_TIPO
 
--- Provincia (Hay varias columnas de la maestra que contienen este dato pero todas tienen la misma cantidad y los datos son los mismos)
+print ' Tabla Tipo_Local creada con exito ';
+end
+go
+
+
+create procedure BILARDISTAS.Migracion_Tabla_Provincia
+as
+begin
+
 insert into BILARDISTAS.Provincia
 select ROW_NUMBER() over (order by DIRECCION_USUARIO_PROVINCIA), DIRECCION_USUARIO_PROVINCIA
 from gd_esquema.Maestra
 where DIRECCION_USUARIO_PROVINCIA is not null
 group by DIRECCION_USUARIO_PROVINCIA
 
--- tipo reclamo
+print ' Tabla Tabla_Provincia creada con exito ';
+end
+go
+
+
+create procedure BILARDISTAS.Migracion_Tabla_Tipo_Reclamo
+as
+begin
+
 insert into BILARDISTAS.Tipo_Reclamo
 select ROW_NUMBER() over (order by RECLAMO_TIPO), RECLAMO_TIPO
 from gd_esquema.Maestra
 where RECLAMO_TIPO is not null
 group by RECLAMO_TIPO
 
--- Estado reclamo
+print ' Tabla Tipo_Reclamo creada con exito ';
+end
+go
+
+
+create procedure BILARDISTAS.Migracion_Tabla_Estado_Reclamo
+as
+begin
+
 insert into BILARDISTAS.Estado_Reclamo
 select ROW_NUMBER() over (order by RECLAMO_ESTADO), RECLAMO_ESTADO
 from gd_esquema.Maestra
 where RECLAMO_ESTADO is not null
 group by RECLAMO_ESTADO
 
--- Tipo cupon reclamo
+print ' Tabla Estado_Reclamo creada con exito ';
+end
+go
+
+
+create procedure BILARDISTAS.Migracion_Tabla_Tipo_Cupon_Reclamo
+as
+begin
+
 insert into BILARDISTAS.Tipo_Cupon_Reclamo
 select ROW_NUMBER() over (order by CUPON_RECLAMO_TIPO), CUPON_RECLAMO_TIPO
 from gd_esquema.Maestra
 where CUPON_RECLAMO_TIPO is not null
 group by CUPON_RECLAMO_TIPO
 
--- Tipo Cupon
+print ' Tabla Tipo_Cupon_Reclamo creada con exito ';
+end
+go
+
+
+create procedure BILARDISTAS.Migracion_Tabla_Tipo_Cupon
+as
+begin
+
 insert into BILARDISTAS.Tipo_Cupon
 select ROW_NUMBER() over (order by CUPON_TIPO), CUPON_TIPO
 from gd_esquema.Maestra
 where CUPON_TIPO is not null
 group by CUPON_TIPO
 
-select * from BILARDISTAS.Tipo_Cupon
+print ' Tabla Tipo_Cupon creada con exito ';
+end
+go
 
--- Operadores
+
+
+create procedure BILARDISTAS.Migracion_Tabla_Operadores
+as
+begin
+
 insert into BILARDISTAS.Operador (OPERADOR_RECLAMO_NOMBRE, OPERADOR_RECLAMO_APELLIDO, OPERADOR_RECLAMO_DNI, OPERADOR_RECLAMO_TELEFONO, OPERADOR_RECLAMO_DIRECCION, OPERADOR_RECLAMO_MAIL, OPERADOR_RECLAMO_FECHA_NAC)
 select OPERADOR_RECLAMO_NOMBRE, OPERADOR_RECLAMO_APELLIDO, OPERADOR_RECLAMO_DNI, OPERADOR_RECLAMO_TELEFONO, OPERADOR_RECLAMO_DIRECCION, OPERADOR_RECLAMO_MAIL, OPERADOR_RECLAMO_FECHA_NAC
 from gd_esquema.Maestra
@@ -636,44 +818,77 @@ where OPERADOR_RECLAMO_NOMBRE is not null
 group by OPERADOR_RECLAMO_NOMBRE, OPERADOR_RECLAMO_APELLIDO, OPERADOR_RECLAMO_DNI, OPERADOR_RECLAMO_TELEFONO, OPERADOR_RECLAMO_DIRECCION, OPERADOR_RECLAMO_MAIL, OPERADOR_RECLAMO_FECHA_NAC
 order by OPERADOR_RECLAMO_NOMBRE
 
--- Usuarios
+print ' Tabla Tabla_Operadores creada con exito ';
+end
+go
+
+
+create procedure BILARDISTAS.Migracion_Tabla_Usuarios
+as
+begin
+
 insert into BILARDISTAS.Usuario (USUARIO_NOMBRE, USUARIO_APELLIDO, USUARIO_DNI, USUARIO_FECHA_NAC, USUARIO_FECHA_REGISTRO, USUARIO_TELEFONO, USUARIO_MAIL)
 select USUARIO_NOMBRE, USUARIO_APELLIDO, USUARIO_DNI, USUARIO_FECHA_NAC, USUARIO_FECHA_REGISTRO, USUARIO_TELEFONO, USUARIO_MAIL
 from gd_esquema.Maestra
 group by USUARIO_NOMBRE, USUARIO_APELLIDO, USUARIO_DNI, USUARIO_FECHA_NAC, USUARIO_FECHA_REGISTRO, USUARIO_TELEFONO, USUARIO_MAIL
 order by USUARIO_NOMBRE
 
---select * from BILARDISTAS.Usuario
+print ' Tabla Usuarios creada con exito ';
+end
+go
 
--- Productos
+
+create procedure BILARDISTAS.Migracion_Tabla_Productos
+as
+begin
+
 insert into BILARDISTAS.Producto
 select PRODUCTO_LOCAL_CODIGO, PRODUCTO_LOCAL_NOMBRE, PRODUCTO_LOCAL_DESCRIPCION, PRODUCTO_LOCAL_PRECIO
 from gd_esquema.Maestra
 where PRODUCTO_LOCAL_CODIGO is not null
 group by PRODUCTO_LOCAL_CODIGO, PRODUCTO_LOCAL_NOMBRE, PRODUCTO_LOCAL_DESCRIPCION, PRODUCTO_LOCAL_PRECIO
 
--- LOCALIDADES (Hay localidades en 3 columnas de la maestra, la que mas tiene  es Envio mensajeria localidad, las otras dos estan incluidas dentro por lo que no obtendriamos nuevas localidades)
+print ' Tabla Tabla_Productos creada con exito ';
+end
+go
+
+
+create procedure BILARDISTAS.Migracion_Tabla_Localidades
+as
+begin
 
 insert into BILARDISTAS.Localidad
 select PROVINCIA, ENVIO_MENSAJERIA_LOCALIDAD
 from gd_esquema.Maestra
-	join BILARDISTAS.Provincia on (ENVIO_MENSAJERIA_PROVINCIA = PROVINCIA_DETALLE)
-where ENVIO_MENSAJERIA_LOCALIDAD is not null and
-	ENVIO_MENSAJERIA_LOCALIDAD not in (select LOCALIDAD_DETALLE from BILARDISTAS.Localidad)
+join BILARDISTAS.Provincia on (ENVIO_MENSAJERIA_PROVINCIA = PROVINCIA_DETALLE)
+where ENVIO_MENSAJERIA_LOCALIDAD is not null 
 group by ENVIO_MENSAJERIA_LOCALIDAD, PROVINCIA
 
--- CUPONES (Hay casos de cupones que tienen el mismo numero del cupon, este atributo no puede tener unique)
+print ' Tabla Tabla_Localidades creada con exito ';
+end
+go
+
+
+
+create procedure BILARDISTAS.Migracion_Tabla_Cupones
+as
+begin
 
 insert into BILARDISTAS.Cupon
 select M.CUPON_NRO, U.USUARIO_CODIGO, TIPO_CUPON, M.CUPON_MONTO, M.CUPON_FECHA_ALTA, M.CUPON_FECHA_VENCIMIENTO
 from gd_esquema.Maestra M
-	join BILARDISTAS.Usuario U on (M.USUARIO_NOMBRE = U.USUARIO_NOMBRE and M.USUARIO_APELLIDO = U.USUARIO_APELLIDO and M.USUARIO_DNI = U.USUARIO_DNI and M.USUARIO_MAIL = U.USUARIO_MAIL)
-	join BILARDISTAS.Tipo_Cupon on (M.CUPON_TIPO = TIPO_CUPON_DETALLE)
+join BILARDISTAS.Usuario U on (M.USUARIO_NOMBRE = U.USUARIO_NOMBRE and M.USUARIO_APELLIDO = U.USUARIO_APELLIDO and M.USUARIO_DNI = U.USUARIO_DNI and M.USUARIO_MAIL = U.USUARIO_MAIL)
+join BILARDISTAS.Tipo_Cupon on (M.CUPON_TIPO = TIPO_CUPON_DETALLE)
 where CUPON_NRO is not null
 
--- DIRECCIONES DE USUARIO (OJO que hay localidades con el mismo nombre pero de distinta provincias,
--- entonces al joinear la maestra con nuestra tabla de localidad aumentan las filas,
--- se puede controlar teniendo en cuenta la provincia que figura en la maestra)
+print ' Tabla Tabla_Cupones creada con exito ';
+end
+go
+
+
+create procedure BILARDISTAS.Migracion_Tabla_Direccion_Usuario
+as
+begin
 
 insert into BILARDISTAS.Direccion_Usuario
 select U.USUARIO_CODIGO, DIRECCION_USUARIO_NOMBRE, DIRECCION_USUARIO_DIRECCION, LOCALIDAD
@@ -684,30 +899,46 @@ from gd_esquema.Maestra M
 where DIRECCION_USUARIO_NOMBRE is not null and LOCALIDAD_PROVINCIA = PROVINCIA
 group by U.USUARIO_CODIGO, DIRECCION_USUARIO_NOMBRE, DIRECCION_USUARIO_DIRECCION, LOCALIDAD
 
+print ' Tabla Tabla_Direccion_Usuario creada con exito ';
+end
+go
 
 
 
 
-
-
+create procedure BILARDISTAS.Migracion_Tabla_Medio_de_Pago
+as
+begin
 
 insert into BILARDISTAS.Medio_De_Pago
-select U.USUARIO_CODIGO, MPT.MEDIO_PAGO_DETALLE, MT.MARCA_TARJETA, MEDIO_PAGO_NRO_TARJETA from gd_esquema.Maestra M
+select U.USUARIO_CODIGO, MPT.MEDIO_PAGO_TIPO, MT.MARCA_TARJETA, MEDIO_PAGO_NRO_TARJETA from gd_esquema.Maestra M
 join BILARDISTAS.Medio_Pago_Tipo MPT on (M.MEDIO_PAGO_TIPO = MPT.MEDIO_PAGO_DETALLE)
 join BILARDISTAS.Marca_Tarjeta MT on (M.MARCA_TARJETA = MT.MARCA_TARJETA_DETALLE)
 join BILARDISTAS.Usuario U on (M.USUARIO_NOMBRE = U.USUARIO_NOMBRE and M.USUARIO_APELLIDO = U.USUARIO_APELLIDO and M.USUARIO_DNI = U.USUARIO_DNI and M.USUARIO_MAIL = U.USUARIO_MAIL)
-group by U.USUARIO_CODIGO, MPT.MEDIO_PAGO_DETALLE, MT.MARCA_TARJETA, MEDIO_PAGO_NRO_TARJETA
+group by U.USUARIO_CODIGO, MPT.MEDIO_PAGO_TIPO, MT.MARCA_TARJETA, MEDIO_PAGO_NRO_TARJETA
+
+print ' Tabla Tabla_Medio_de_Pago creada con exito ';
+end
+go
 
 
-
+create procedure BILARDISTAS.Migracion_Tabla_Repartidores
+as
+begin
 
 insert into BILARDISTAS.Repartidor
 select TM.TIPO_MOVILIDAD_REPARTIDOR, REPARTIDOR_NOMBRE, REPARTIDOR_APELLIDO, REPARTIDOR_DNI, REPARTIDOR_TELEFONO, REPARTIDOR_DIRECION, REPARTIDOR_EMAIL, REPARTIDOR_FECHA_NAC  from gd_esquema.Maestra M
 join BILARDISTAS.Tipo_Movilidad TM on (M.REPARTIDOR_TIPO_MOVILIDAD = TM.TIPO_MOVILIDAD_DETALLE)
 group by TM.TIPO_MOVILIDAD_REPARTIDOR, REPARTIDOR_NOMBRE, REPARTIDOR_APELLIDO, REPARTIDOR_DNI, REPARTIDOR_TELEFONO, REPARTIDOR_DIRECION, REPARTIDOR_EMAIL, REPARTIDOR_FECHA_NAC
 
+print ' Tabla Tabla_Repartidores creada con exito ';
+end
+go
 
 
+create procedure BILARDISTAS.Migracion_Tabla_Envio_Pedido
+as
+begin
 
 insert into BILARDISTAS.Envio_Pedido
 select RE.REPARTIDOR_CODIGO, DU.DIRECCION_USUARIO_CODIGO_USUARIO, PEDIDO_PRECIO_ENVIO PRECIO_ENVIO, PEDIDO_PROPINA from gd_esquema.Maestra M
@@ -717,6 +948,14 @@ join BILARDISTAS.Repartidor RE on (RE.REPARTIDOR_NOMBRE = M.REPARTIDOR_NOMBRE an
 where M.PEDIDO_NRO is not null
 group by RE.REPARTIDOR_CODIGO ,DU.DIRECCION_USUARIO_CODIGO_USUARIO, PEDIDO_PRECIO_ENVIO, PEDIDO_PROPINA
 
+print ' Tabla Envio_Pedido creada con exito ';
+end
+go
+
+
+create procedure BILARDISTAS.Migracion_Tabla_Categoria_Local
+as
+begin
 
 insert into BILARDISTAS.Categoria_Local
 values ('1',1, 'Parrilla')
@@ -731,7 +970,14 @@ values ('5',2, 'Kiosko')
 insert into BILARDISTAS.Categoria_Local
 values ('6',2, 'Supermercado')
 
+print ' Tabla Categoria_Local creada con exito ';
+end
+go
 
+
+create procedure BILARDISTAS.Migracion_Tabla_Local_Tienda
+as
+begin
 
 insert into BILARDISTAS.Local_Tienda (LOCAL_TIPO, LOCAL_NOMBRE,LOCAL_DESCRIPCION, LOCAL_DIRECCION, LOCAL_LOCALIDAD)
 select LOC.TIPO_LOCAL, LOCAL_NOMBRE, LOCAL_DESCRIPCION, LOCAL_DIRECCION, L.LOCALIDAD from gd_esquema.Maestra M
@@ -741,6 +987,14 @@ join BILARDISTAS.Tipo_Local LOC on (M.LOCAL_TIPO = LOC.TIPO_LOCAL_DETALLE)
 where LOCAL_NOMBRE is not null and LOCALIDAD_PROVINCIA = PROVINCIA
 group by LOC.TIPO_LOCAL, LOCAL_NOMBRE, LOCAL_DESCRIPCION, LOCAL_DIRECCION, L.LOCALIDAD 
 
+print ' Tabla Local_Tienda creada con exito ';
+end
+go
+
+
+create procedure BILARDISTAS.Migracion_Tabla_Horario_Local
+as
+begin
 
 insert into BILARDISTAS.Horario_Local
 select D.DIA_HORARIO_LOCAL, L.LOCAL_CODIGO, HORARIO_LOCAL_HORA_APERTURA, HORARIO_LOCAL_HORA_CIERRE from gd_esquema.Maestra M
@@ -748,14 +1002,165 @@ join BILARDISTAS.Dia D on (M.HORARIO_LOCAL_DIA = D.DIA_HORARIO_LOCAL_DETALLE)
 join BILARDISTAS.Local_Tienda L on (M.LOCAL_NOMBRE = L.LOCAL_NOMBRE)
 group by L.LOCAL_CODIGO, D.DIA_HORARIO_LOCAL, HORARIO_LOCAL_HORA_APERTURA, HORARIO_LOCAL_HORA_CIERRE
 
+print ' Tabla Horario_Local creada con exito ';
+end
+go
 
 
+create procedure BILARDISTAS.Migracion_Tabla_Pedidos
+as
+begin
+
+insert into BILARDISTAS.Pedido
+select distinct M.PEDIDO_NRO, U.USUARIO_CODIGO, L.LOCAL_CODIGO, MP.MEDIO_PAGO_CODIGO, EST.ESTADO_PEDIDO, EP.ENVIO_PEDIDO_CODIGO, M.PEDIDO_OBSERV, M.PEDIDO_FECHA, M.PEDIDO_FECHA_ENTREGA, M.PEDIDO_TIEMPO_ESTIMADO_ENTREGA, M.PEDIDO_CALIFICACION, M.PEDIDO_TOTAL_PRODUCTOS, M.PEDIDO_TARIFA_SERVICIO, M.PEDIDO_TOTAL_CUPONES, M.PEDIDO_TOTAL_SERVICIO from gd_esquema.Maestra M
+join BILARDISTAS.Estado_Pedido EST on (M.PEDIDO_ESTADO = EST.ESTADO_PEDIDO_DETALLE)
+join BILARDISTAS.Medio_De_Pago MP on (M.MEDIO_PAGO_NRO_TARJETA = MP.MEDIO_PAGO_NRO_TARJETA)
+join BILARDISTAS.Usuario U on (M.USUARIO_DNI = U.USUARIO_DNI and M.USUARIO_MAIL = U.USUARIO_MAIL)
+join BILARDISTAS.Local_Tienda L on (M.LOCAL_NOMBRE = L.LOCAL_NOMBRE)
+join BILARDISTAS.Direccion_Usuario DU on (DU.DIRECCION_USUARIO_CODIGO_USUARIO = U.USUARIO_CODIGO)
+join BILARDISTAS.Repartidor RE on (RE.REPARTIDOR_DNI = M.REPARTIDOR_DNI and RE.REPARTIDOR_EMAIL = M.REPARTIDOR_EMAIL)
+join BILARDISTAS.Envio_Pedido EP on (EP.ENVIO_DIRECCION = DU.DIRECCION_USUARIO_CODIGO_USUARIO)
+where EP.ENVIO_REPARTIDOR = RE.REPARTIDOR_CODIGO and EP.ENVIO_DIRECCION = DU.DIRECCION_USUARIO_CODIGO_USUARIO and EP.ENVIO_PROPINA = M.PEDIDO_PROPINA and EP.ENVIO_PRECIO = M.PEDIDO_PRECIO_ENVIO
+
+print ' Tabla Tabla_Pedidos creada con exito ';
+end
+go
+
+create procedure BILARDISTAS.Migracion_Tabla_Producto_Por_Pedido
+as
+begin
+
+insert into BILARDISTAS.Producto_Por_Pedido
+select PEDIDO_NRO, PRODUCTO_LOCAL_CODIGO, sum(PRODUCTO_CANTIDAD),PRODUCTO_LOCAL_PRECIO,sum(PRODUCTO_CANTIDAD) * PRODUCTO_LOCAL_PRECIO  from gd_esquema.Maestra
+where PEDIDO_NRO is not null and PRODUCTO_LOCAL_CODIGO is not null
+group by PEDIDO_NRO, PRODUCTO_LOCAL_CODIGO, PRODUCTO_LOCAL_PRECIO
+order by PEDIDO_NRO
+
+print ' Tabla Producto_Por_Pedido creada con exito ';
+end
+go
+
+
+create procedure BILARDISTAS.Migracion_Tabla_Producto_Por_Local
+as
+begin
+
+insert into BILARDISTAS.Producto_Local
+select L.LOCAL_CODIGO, M.PRODUCTO_LOCAL_CODIGO from gd_esquema.Maestra M
+join BILARDISTAS.Local_Tienda L on (M.LOCAL_NOMBRE = L.LOCAL_NOMBRE)
+where M.PRODUCTO_LOCAL_CODIGO is not null
+group by L.LOCAL_CODIGO, M.PRODUCTO_LOCAL_CODIGO
+
+print ' Tabla Producto_Por_Local creada con exito ';
+end
+go
+
+
+create procedure BILARDISTAS.Migracion_Tabla_Envio_Mensajeria
+as
+begin
+
+insert into BILARDISTAS.Envio_Mensajeria
+select distinct M.ENVIO_MENSAJERIA_NRO, U.USUARIO_CODIGO, RE.REPARTIDOR_CODIGO, PT.PAQUETE_TIPO, MP.MEDIO_PAGO_CODIGO, EEM.ESTADO_ENVIO_MENSAJERIA, M.ENVIO_MENSAJERIA_DIR_ORIG, M.ENVIO_MENSAJERIA_DIR_DEST, L.LOCALIDAD, M.ENVIO_MENSAJERIA_KM, M.ENVIO_MENSAJERIA_PRECIO_ENVIO, M.ENVIO_MENSAJERIA_PRECIO_SEGURO, M.ENVIO_MENSAJERIA_PROPINA, M.ENVIO_MENSAJERIA_TOTAL, M.ENVIO_MENSAJERIA_OBSERV, M.ENVIO_MENSAJERIA_FECHA, M.ENVIO_MENSAJERIA_FECHA_ENTREGA, M.ENVIO_MENSAJERIA_TIEMPO_ESTIMADO, M.ENVIO_MENSAJERIA_CALIFICACION from gd_esquema.Maestra M
+join BILARDISTAS.Usuario U on (M.USUARIO_NOMBRE = U.USUARIO_NOMBRE and M.USUARIO_APELLIDO = U.USUARIO_APELLIDO and M.USUARIO_DNI = U.USUARIO_DNI and M.USUARIO_MAIL = U.USUARIO_MAIL)
+join BILARDISTAS.Repartidor RE on (RE.REPARTIDOR_NOMBRE = M.REPARTIDOR_NOMBRE and RE.REPARTIDOR_APELLIDO = M.REPARTIDOR_APELLIDO and RE.REPARTIDOR_DNI = M.REPARTIDOR_DNI and RE.REPARTIDOR_EMAIL = M.REPARTIDOR_EMAIL)
+join BILARDISTAS.Paquete_Tipo PT on (M.PAQUETE_TIPO = PT.PAQUETE_TIPO) 
+join BILARDISTAS.Medio_De_Pago MP on (M.MEDIO_PAGO_NRO_TARJETA = MP.MEDIO_PAGO_NRO_TARJETA)
+join BILARDISTAS.Estado_Envio_Mensajeria EEM on (M.ENVIO_MENSAJERIA_ESTADO = EEM.ESTADO_ENVIO_MENSAJERIA_DETALLE)
+join BILARDISTAS.Localidad L on (M.ENVIO_MENSAJERIA_LOCALIDAD = L.LOCALIDAD_DETALLE)
+join BILARDISTAS.Provincia P on (M.ENVIO_MENSAJERIA_PROVINCIA = P.PROVINCIA_DETALLE)
+where LOCALIDAD_PROVINCIA = PROVINCIA
+
+print ' Tabla Envio_Mensajeria creada con exito ';
+end
+go
+
+create procedure BILARDISTAS.Migracion_Tabla_Repartidor_Localidad
+as
+begin
+
+--REPARTIDOR_LOCALIDAD ACTIVOS
+insert into BILARDISTAS.Repartidor_Localidad
+select (select top 1 ENVIO_MENSAJERIA_LOCALIDAD from BILARDISTAS.Vista_Repartidores_Localidad
+where REPARTIDOR_CODIGO = R.REPARTIDOR_CODIGO
+order by ENVIO_MENSAJERIA_FECHA DESC), R.REPARTIDOR_CODIGO,  'A' from BILARDISTAS.Repartidor R
+
+
+--REPARTIDOR_LOCALIDAD INACTIVOS
+insert into BILARDISTAS.Repartidor_Localidad
+select distinct  EM.ENVIO_MENSAJERIA_LOCALIDAD,  EM.ENVIO_MENSAJERIA_REPARTIDOR, 'I' from BILARDISTAS.Envio_Mensajeria EM
+where EM.ENVIO_MENSAJERIA_LOCALIDAD not in (select RL.LOCALIDAD from BILARDISTAS.Repartidor_Localidad RL
+where RL.REPARTIDOR = EM.ENVIO_MENSAJERIA_REPARTIDOR)
+group by EM.ENVIO_MENSAJERIA_REPARTIDOR, EM.ENVIO_MENSAJERIA_LOCALIDAD
+
+union
+(select distinct L.LOCAL_LOCALIDAD, EP.ENVIO_REPARTIDOR, 'I' from BILARDISTAS.Envio_Pedido EP
+join BILARDISTAS.Pedido P on (P.PEDIDO_ENVIO = EP.ENVIO_PEDIDO_CODIGO)
+join BILARDISTAS.Local_Tienda L on (P.PEDIDO_LOCAL = L.LOCAL_CODIGO)
+where L.LOCAL_LOCALIDAD not in (select RL.LOCALIDAD from BILARDISTAS.Repartidor_Localidad RL
+where RL.REPARTIDOR = EP.ENVIO_REPARTIDOR)
+group by EP.ENVIO_REPARTIDOR, L.LOCAL_LOCALIDAD
+)
+order by EM.ENVIO_MENSAJERIA_REPARTIDOR
+
+print ' Tabla Repartidor_Localidad creada con exito ';
 end
 go
 
 
 
+create procedure BILARDISTAS.Migracion_Tabla_Pedido_Por_Cupon
+as
+begin
 
+insert into BILARDISTAS.Pedido_Cupon
+select CUPON_NRO, PEDIDO_NRO
+from gd_esquema.Maestra
+where PEDIDO_NRO is not null and CUPON_NRO is not null
+
+print ' Tabla Pedido_Por_Cupon creada con exito ';
+end
+go
+
+
+create procedure BILARDISTAS.Migracion_Tabla_Reclamos
+as
+begin
+
+insert into BILARDISTAS.Reclamo
+select RECLAMO_NRO, U.USUARIO_CODIGO, OP.OPERADOR_CODIGO, M.PEDIDO_NRO, TRec.TIPO_RECLAMO, ERec.ESTADO_RECLAMO, M.RECLAMO_FECHA, M.RECLAMO_DESCRIPCION, M.RECLAMO_FECHA_SOLUCION, M.RECLAMO_SOLUCION, M.RECLAMO_CALIFICACION  from gd_esquema.Maestra M
+	join BILARDISTAS.Usuario U on (M.USUARIO_NOMBRE = U.USUARIO_NOMBRE and M.USUARIO_APELLIDO = U.USUARIO_APELLIDO and M.USUARIO_DNI = U.USUARIO_DNI and M.USUARIO_MAIL = U.USUARIO_MAIL)
+	join BILARDISTAS.Tipo_Reclamo TRec on (M.RECLAMO_TIPO = TRec.TIPO_RECLAMO_DETALLE)
+	join BILARDISTAS.Estado_Reclamo ERec on (M.RECLAMO_ESTADO = ERec.ESTADO_RECLAMO_DETALLE)
+	join BILARDISTAS.Operador OP on (OP.OPERADOR_RECLAMO_MAIL = M.OPERADOR_RECLAMO_MAIL and OP.OPERADOR_RECLAMO_DNI = M.OPERADOR_RECLAMO_DNI)
+
+print ' Tabla Tabla_Reclamos creada con exito ';
+end
+go
+
+
+create procedure BILARDISTAS.Migracion_Tabla_Cupon_Por_Reclamo
+as
+begin
+
+insert into BILARDISTAS.Cupon
+select M.CUPON_RECLAMO_NRO, U.USUARIO_CODIGO, TIPO_CUPON, M.CUPON_RECLAMO_MONTO, M.CUPON_RECLAMO_FECHA_ALTA, M.CUPON_RECLAMO_FECHA_VENCIMIENTO
+from gd_esquema.Maestra M
+    join BILARDISTAS.Usuario U on (M.USUARIO_NOMBRE = U.USUARIO_NOMBRE and M.USUARIO_APELLIDO = U.USUARIO_APELLIDO and M.USUARIO_DNI = U.USUARIO_DNI and M.USUARIO_MAIL = U.USUARIO_MAIL)
+    join BILARDISTAS.Tipo_Cupon on (M.CUPON_RECLAMO_TIPO = TIPO_CUPON_DETALLE)
+where M.CUPON_RECLAMO_NRO not in (select CUPON_NRO from BILARDISTAS.Cupon)
+
+
+insert into BILARDISTAS.Cupon_Reclamo
+select M.CUPON_RECLAMO_NRO, M.RECLAMO_NRO, M.CUPON_RECLAMO_NRO, M.CUPON_RECLAMO_MONTO, M.CUPON_RECLAMO_FECHA_ALTA, M.CUPON_RECLAMO_FECHA_VENCIMIENTO, TIPO_CUPON_RECLAMO
+from gd_esquema.Maestra M
+    join BILARDISTAS.Usuario U on (M.USUARIO_NOMBRE = U.USUARIO_NOMBRE and M.USUARIO_APELLIDO = U.USUARIO_APELLIDO and M.USUARIO_DNI = U.USUARIO_DNI and M.USUARIO_MAIL = U.USUARIO_MAIL)
+    join BILARDISTAS.Tipo_Cupon_Reclamo on (M.CUPON_RECLAMO_TIPO = TIPO_CUPON_RECLAMO_DETALLE)
+where M.CUPON_RECLAMO_NRO is not null
+
+print ' Tabla Cupon_Por_Reclamo creada con exito ';
+end
+go
 
 
 create procedure BILARDISTAS.Eliminar_Constraints
@@ -769,25 +1174,20 @@ alter table BILARDISTAS.Reclamo
 	drop constraint FK_Reclamo_Tipo
 alter table BILARDISTAS.Reclamo
 	drop constraint FK_Reclamo_Estado
-
 alter table BILARDISTAS.Cupon_Reclamo
 	drop constraint FK_Cupon_Reclamo_Cupon
 alter table BILARDISTAS.Cupon_Reclamo
 	drop constraint FK_Cupon_Reclamo_Codigo_Reclamo
-
 alter table BILARDISTAS.Cupon
 	drop constraint FK_Cupon_Usuario
 alter table BILARDISTAS.Cupon
 	drop constraint FK_Cupon_Tipo
-
 alter table BILARDISTAS.Localidad
 	drop constraint FK_Localidad_Provincia
-
 alter table BILARDISTAS.Direccion_Usuario
 	drop constraint FK_Direccion_Usuario_Codigo_Usuario
 alter table BILARDISTAS.Direccion_Usuario
 	drop constraint FK_Direccion_Usuario_Localidad
- 
 end
 go
 
@@ -832,27 +1232,59 @@ end
 go
 
 
-/*
+create procedure BILARDISTAS.Iniciar_Migracion 
+as
+begin
+
+exec BILARDISTAS.Creacion_Indices
+exec BILARDISTAS.Migracion_Tabla_Tipo_Movilidad
+exec BILARDISTAS.Migracion_Tabla_Estado_Envio_Mensajeria
+exec BILARDISTAS.Migracion_Tabla_Paquete_Tipo
+exec BILARDISTAS.Migracion_Tabla_Medio_Pago_Tipo
+exec BILARDISTAS.Migracion_Tabla_Estado_Repartidor_Localidad
+exec BILARDISTAS.Migracion_Tabla_Marca_Tarjeta
+exec BILARDISTAS.Migracion_Tabla_Dia
+exec BILARDISTAS.Migracion_Tabla_Estado_Pedido
+exec BILARDISTAS.Migracion_Tabla_Tipo_Local
+exec BILARDISTAS.Migracion_Tabla_Provincia
+exec BILARDISTAS.Migracion_Tabla_Tipo_Reclamo
+exec BILARDISTAS.Migracion_Tabla_Estado_Reclamo
+exec BILARDISTAS.Migracion_Tabla_Tipo_Cupon_Reclamo
+exec BILARDISTAS.Migracion_Tabla_Tipo_Cupon
+exec BILARDISTAS.Migracion_Tabla_Operadores
+exec BILARDISTAS.Migracion_Tabla_Usuarios
+exec BILARDISTAS.Migracion_Tabla_Productos
+exec BILARDISTAS.Migracion_Tabla_Localidades
+exec BILARDISTAS.Migracion_Tabla_Cupones
+exec BILARDISTAS.Migracion_Tabla_Direccion_Usuario
+exec BILARDISTAS.Migracion_Tabla_Medio_de_Pago
+exec BILARDISTAS.Migracion_Tabla_Repartidores
+exec BILARDISTAS.Migracion_Tabla_Envio_Pedido
+exec BILARDISTAS.Migracion_Tabla_Categoria_Local
+exec BILARDISTAS.Migracion_Tabla_Local_Tienda
+exec BILARDISTAS.Migracion_Tabla_Horario_Local
+exec BILARDISTAS.Migracion_Tabla_Pedidos
+exec BILARDISTAS.Migracion_Tabla_Producto_Por_Pedido
+exec BILARDISTAS.Migracion_Tabla_Producto_Por_Local
+exec BILARDISTAS.Migracion_Tabla_Envio_Mensajeria
+exec BILARDISTAS.Crear_Vista_Repartidores_Localidad 
+exec BILARDISTAS.Migracion_Tabla_Repartidor_Localidad
+exec BILARDISTAS.Migracion_Tabla_Pedido_Por_Cupon
+exec BILARDISTAS.Migracion_Tabla_Reclamos
+exec BILARDISTAS.Migracion_Tabla_Cupon_Por_Reclamo
+
+print ' Tablas migradas con exito ';
+end
+go
+
+
+
 ---------------------------------------------------------------------------------------------------------
 --------------------------------------- EJECUCION DE STORED PROCEDURES ----------------------------------
 ---------------------------------------------------------------------------------------------------------
 
 
 exec BILARDISTAS.Creacion_Tablas
+exec BILARDISTAS.Creacion_PKs
+exec BILARDISTAS.Creacion_Fks
 exec BILARDISTAS.Iniciar_Migracion
-
-
-
----------------------------------------------------------------------------------------------------------
-------------------------------------------------- EXTRAS ------------------------------------------------
----------------------------------------------------------------------------------------------------------
-
-exec BILARDISTAS.Eliminar_Constraints
-exec BILARDISTAS.Eliminar_Tablas
-drop procedure BILARDISTAS.Creacion_Tablas
-drop procedure BILARDISTAS.Iniciar_Migracion
-drop procedure BILARDISTAS.Eliminar_Tablas
-drop procedure BILARDISTAS.Eliminar_Constraints
-drop schema BILARDISTAS
-*/
-
